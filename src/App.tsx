@@ -1,12 +1,25 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 
 function App() {
+  const [ffmpegLoaded, setFFmpegLoaded] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const ffmpeg = new FFmpeg();
+
   const ffmpegRef = useRef(new FFmpeg());
   const messageRef = useRef<HTMLParagraphElement | null>(null);
+
+  useEffect(() => {
+    // loading ffmpeg on startup
+    ffmpeg.load().then(() => {
+      setFFmpegLoaded(true);
+    });
+    ffmpeg.on("log", ({ message }) => {
+      console.log(message);
+    });
+  }, []);
 
   const load = async () => {
     const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm";
@@ -73,20 +86,23 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>MP4 Audio Extractor</h1>
-      {!loaded ? (
-        <button onClick={load}>Load FFmpeg</button>
-      ) : (
-        <>
-          <input type="file" accept="video/mp4" onChange={handleFileChange} />
-          <br />
-          <button onClick={extractAudio} disabled={!videoFile}>
-            Extract Audio
-          </button>
-          <p ref={messageRef}></p>
-        </>
-      )}
+    <div className="flex">
+      {ffmpegLoaded && <p>FFmpeg loaded</p>}
+      <div>
+        <h1>MP4 Audio Extractor</h1>
+        {!loaded ? (
+          <button onClick={load}>Load FFmpeg</button>
+        ) : (
+          <>
+            <input type="file" accept="video/mp4" onChange={handleFileChange} />
+            <br />
+            <button onClick={extractAudio} disabled={!videoFile}>
+              Extract Audio
+            </button>
+            <p ref={messageRef}></p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
